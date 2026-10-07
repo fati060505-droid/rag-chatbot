@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import streamlit as st
 from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -9,8 +10,22 @@ from langchain_groq import ChatGroq
 st.set_page_config(page_title="RAG Chatbot", page_icon="💬")
 st.title("💬 Document Chatbot")
 
-DOC_PATH = "data/document.txt"
-INDEX_DIR = "vectorstore"
+BASE = Path(__file__).parent
+INDEX_DIR = str(BASE / "vectorstore")
+
+# Look for the document in the usual places
+DOC_PATH = None
+for candidate in [BASE / "data" / "document.txt", BASE / "document.txt"]:
+    if candidate.exists():
+        DOC_PATH = str(candidate)
+        break
+
+if DOC_PATH is None and not os.path.exists(os.path.join(INDEX_DIR, "index.faiss")):
+    st.error(
+        "document.txt not found in your GitHub repo. Add a file named "
+        "`data/document.txt` (or `document.txt` in the main folder), then reboot the app."
+    )
+    st.stop()
 
 # API key: Streamlit Secrets (cloud) or environment variable (local)
 api_key = os.getenv("GROQ_API_KEY")
